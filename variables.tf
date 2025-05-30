@@ -26,3 +26,5 @@ variable "multi_az_deployment" {}
 variable "domain_name" {}
 variable "alternative_names" {}
 
+# alb variables
+variable "target_type" {}
