@@ -88,8 +88,34 @@ module "s3_bucket" {
 
 # create ecs task execution role
 module "ecs_task_execution_role" {
-  source = "git@github.com:JoaquinCruzTR/terraform-modules.git//iam-role"
-  project_name = local.project_name
+  source           = "git@github.com:JoaquinCruzTR/terraform-modules.git//iam-role"
+  project_name     = local.project_name
   file_bucket_name = module.s3_bucket.env_file_bucket_name
-  environment = local.environment
+  environment      = local.environment
 }
+
+# ecs cluster, task definition and service
+module "ecs" {
+  source                       = "git@github.com:JoaquinCruzTR/terraform-modules.git//ecs"
+  alb_target_group_arn         = module.application_load_balancer.target_group_arn
+  project_name                 = local.project_name
+  environment                  = local.environment
+  ecs_execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
+  architecture                 = var.architecture
+  container_image              = var.container_image
+  env_file_bucket_name         = module.s3_bucket.env_file_bucket_name
+  envronment_file_name         = var.envronment_file_name
+  region                       = local.region
+  private_app_subnet_az1_id    = module.vpc.private_app_subnet_az1_id
+  private_app_subnet_az2_id    = module.vpc.private_app_subnet_az2_id
+  app_server_security_group_id = module.security_groups.app_server_security_group_id
+}
+
+# create asg - ecs service
+module "ecs_asg" {
+  source       = "git@github.com:JoaquinCruzTR/terraform-modules.git//asg-ecs"
+  project_name = local.project_name
+  environment  = local.environment
+  ecs_service  = module.ecs.ecs_service
+}
+  
